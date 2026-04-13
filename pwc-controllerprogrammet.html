@@ -1,0 +1,1778 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Demo – Controllerprogrammet 2026</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --orange:        rgb(253,81,8);
+    --orange-med:    rgb(254,124,57);
+    --orange-light:  rgb(255,170,114);
+    --orange-tint1:  rgb(255,210,180);
+    --orange-tint2:  rgb(255,230,210);
+    --orange-tint3:  rgb(255,245,238);
+    --grey:          rgb(161,168,179);
+    --grey-med:      rgb(181,188,196);
+    --grey-light:    rgb(203,209,214);
+    --grey-tint1:    rgb(220,224,228);
+    --grey-tint2:    rgb(235,238,240);
+    --grey-tint3:    rgb(247,248,249);
+    --black:         rgb(0,0,0);
+    --bg:            rgb(243,244,246);
+    --white:         rgb(255,255,255);
+    --green:         rgb(5,150,105);
+    --yellow:        rgb(233,176,31);
+    --red:           rgb(220,38,38);
+    --sidebar-w:     240px;
+    --header-h:      58px;
+  }
+
+  body {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    background: var(--bg);
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  h1,h2,h3,h4,h5,h6 { font-family: Georgia, serif; }
+
+  /* ── LOGIN SCREEN ── */
+  #login-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+  }
+  #login-screen.hidden { display: none; }
+
+  .login-card {
+    background: var(--white);
+    border-radius: 6px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.10);
+    width: 400px;
+    max-width: 95vw;
+    overflow: hidden;
+    position: relative;
+    z-index: 10000;        
+  }
+  .login-top {
+    background: #1a1a1a;
+    padding: 32px 36px 24px;
+    text-align: center;
+  }
+  .login-top .login-title {
+    font-family: Georgia, serif;
+    font-size: 22px;
+    color: var(--white);
+    letter-spacing: 0.5px;
+  }
+  .login-top .login-sub {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: var(--grey-light);
+    margin-top: 6px;
+  }
+  .login-body { padding: 32px 36px; }
+  .login-body .form-group {
+    display: flex; flex-direction: column; gap: 5px; margin-bottom: 18px;
+  }
+  .login-body label {
+    font-size: 11px; font-weight: bold; color: var(--grey); text-transform: uppercase; letter-spacing: 0.6px;
+  }
+  .login-body input {
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    padding: 10px 12px;
+    border: 1px solid var(--grey-tint1);
+    border-radius: 4px;
+    background: var(--grey-tint3);
+    transition: border 0.15s;
+  }
+  .login-body input:focus { outline: none; border-color: var(--orange); background: var(--white); }
+  .login-btn {
+    width: 100%;
+    padding: 11px;
+    background: var(--orange);
+    color: var(--white);
+    border: none;
+    border-radius: 4px;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: opacity 0.15s;
+    margin-top: 6px;
+  }
+  .login-btn:hover { opacity: 0.88; }
+  .login-footer {
+    padding: 14px 36px 24px;
+    font-size: 10px;
+    color: var(--grey);
+    text-align: center;
+    border-top: 1px solid var(--grey-tint1);
+  }
+
+  /* ── APP SHELL ── */
+  #app { display: none; }
+  #app.visible { display: block; }
+
+  /* ── TOP HEADER ── */
+  #top-header {
+    height: var(--header-h);
+    background: #1a1a1a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .app-title {
+    font-family: Georgia, serif;
+    font-size: 17px;
+    color: var(--white);
+    letter-spacing: 0.3px;
+  }
+  .app-title span { color: var(--orange); }
+  .header-sub {
+    font-size: 10px;
+    color: var(--grey);
+    border-left: 1px solid #333;
+    padding-left: 14px;
+  }
+  .header-right { display: flex; align-items: center; gap: 14px; }
+  .header-right .username { color: var(--grey-light); font-size: 12px; }
+  .avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: bold;
+  }
+  .logout-btn {
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+    color: var(--grey);
+    background: none;
+    border: 1px solid #333;
+    border-radius: 3px;
+    padding: 4px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover { border-color: var(--grey); color: var(--white); }
+
+  /* ── LAYOUT ── */
+  #layout { display: flex; margin-top: var(--header-h); }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: var(--sidebar-w);
+    background: var(--white);
+    border-right: 1px solid var(--grey-tint1);
+    position: fixed;
+    top: var(--header-h); left: 0; bottom: 0;
+    overflow-y: auto;
+    z-index: 900;
+  }
+  .org-box {
+    padding: 14px 18px;
+    background: var(--grey-tint3);
+    border-bottom: 1px solid var(--grey-tint1);
+  }
+  .org-box .org-name { font-size: 12px; font-weight: bold; color: #1a1a1a; }
+  .org-box .org-year { font-size: 10px; color: var(--grey); margin-top: 2px; }
+  .nav-section-label {
+    padding: 16px 18px 5px;
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--grey);
+  }
+  #sidebar nav ul { list-style: none; }
+  #sidebar nav ul li span {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 18px;
+    font-size: 12px;
+    color: #444;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.12s;
+  }
+  #sidebar nav ul li span:hover { background: var(--orange-tint3); color: #1a1a1a; }
+  #sidebar nav ul li.active span {
+    background: var(--orange-tint3);
+    color: var(--orange);
+    border-left-color: var(--orange);
+    font-weight: bold;
+  }
+  .nav-icon { font-size: 13px; min-width: 16px; }
+
+  /* ── MAIN ── */
+  #main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 28px 28px 40px;
+  }
+
+  /* ── PAGES ── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── BREADCRUMB ── */
+  .breadcrumb { font-size: 11px; color: var(--grey); margin-bottom: 14px; }
+  .breadcrumb span { color: var(--orange); }
+
+  /* ── PAGE TITLE BAR ── */
+  .page-title-bar {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid var(--orange-tint1);
+  }
+  .page-title-bar h2 { font-size: 20px; color: #1a1a1a; }
+  .period-selector { display: flex; align-items: center; gap: 8px; }
+  .period-selector select, .period-selector input {
+    font-family: Arial, sans-serif; font-size: 12px;
+    border: 1px solid var(--grey-tint1); padding: 6px 10px;
+    background: var(--white); border-radius: 4px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn {
+    font-family: Arial, sans-serif; font-size: 12px;
+    padding: 7px 16px; border: none; border-radius: 4px;
+    cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--orange); color: var(--white); }
+  .btn-secondary { background: var(--grey-tint2); color: #333; border: 1px solid var(--grey-tint1); }
+  .btn-outline { background: transparent; border: 1px solid var(--orange); color: var(--orange); }
+  .btn-light { background: var(--orange-tint3); color: var(--orange); border: 1px solid var(--orange-tint1); }
+
+  /* ── KPI CARDS ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+    gap: 14px; margin-bottom: 22px;
+  }
+  .kpi-card {
+    background: var(--white);
+    border-radius: 5px;
+    padding: 16px 18px;
+    border-top: 3px solid var(--orange-tint1);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .kpi-card.accent { border-top-color: var(--orange); }
+  .kpi-card.status-ok { border-top-color: var(--green); }
+  .kpi-card.status-warn { border-top-color: var(--yellow); }
+  .kpi-card.status-err { border-top-color: var(--red); }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--grey); margin-bottom: 6px; }
+  .kpi-value { font-family: Georgia, serif; font-size: 22px; color: #1a1a1a; }
+  .kpi-sub { font-size: 10px; color: var(--grey); margin-top: 3px; }
+  .kpi-delta { font-size: 11px; margin-top: 4px; font-weight: bold; }
+  .kpi-delta.pos { color: var(--green); }
+  .kpi-delta.neg { color: var(--red); }
+  .kpi-delta.neutral { color: var(--grey); }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--white);
+    border-radius: 5px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    border: 1px solid var(--grey-tint1);
+    margin-bottom: 18px;
+    overflow: hidden;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--grey-tint1);
+    background: var(--grey-tint3);
+  }
+  .card-header h3 { font-size: 13px; color: #1a1a1a; }
+  .card-header .card-actions { display: flex; gap: 8px; align-items: center; }
+  .card-body { padding: 18px; }
+
+  /* ── TABLES ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table thead tr { background: #1a1a1a; color: var(--white); }
+  .data-table thead th {
+    padding: 9px 13px; text-align: left;
+    font-family: Arial, sans-serif; font-weight: bold; font-size: 11px;
+    letter-spacing: 0.4px; cursor: pointer; user-select: none;
+    white-space: nowrap;
+  }
+  .data-table thead th:hover { background: #333; }
+  .data-table tbody tr { border-bottom: 1px solid var(--grey-tint2); }
+  .data-table tbody tr:hover { background: var(--orange-tint3); }
+  .data-table tbody td { padding: 8px 13px; }
+  .data-table tfoot tr { background: var(--grey-tint2); }
+  .data-table tfoot td { padding: 9px 13px; border-top: 2px solid var(--grey-tint1); font-weight: bold; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .group-row td { background: var(--orange-tint3); font-weight: bold; font-size: 11px; color: var(--orange); padding: 6px 13px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-block; padding: 2px 9px;
+    border-radius: 10px; font-size: 10px; font-weight: bold;
+  }
+  .badge-ok     { background: rgba(5,150,105,0.10);  color: var(--green); }
+  .badge-warn   { background: rgba(233,176,31,0.13); color: #9a7200; }
+  .badge-err    { background: rgba(220,38,38,0.10);  color: var(--red); }
+  .badge-orange { background: var(--orange-tint2);   color: var(--orange); }
+  .badge-grey   { background: var(--grey-tint1);     color: var(--grey); }
+  .badge-light  { background: var(--orange-tint3);   color: var(--orange-med); }
+
+  /* ── PROGRESS ── */
+  .prog-wrap { background: var(--grey-tint1); border-radius: 3px; height: 7px; min-width: 70px; }
+  .prog-bar  { height: 7px; border-radius: 3px; background: var(--orange-light); }
+  .prog-bar.accent { background: var(--orange); }
+  .prog-bar.over  { background: var(--red); }
+
+  /* ── TABS ── */
+  .tab-nav {
+    display: flex; border-bottom: 2px solid var(--grey-tint1);
+    margin-bottom: 18px; gap: 0;
+  }
+  .tab-btn {
+    font-family: Arial, sans-serif; font-size: 12px;
+    padding: 8px 18px; background: none; border: none;
+    border-bottom: 3px solid transparent; margin-bottom: -2px;
+    cursor: pointer; color: var(--grey); transition: all 0.12s;
+  }
+  .tab-btn:hover { color: #1a1a1a; }
+  .tab-btn.active { color: var(--orange); border-bottom-color: var(--orange); font-weight: bold; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── GRIDS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .grid-60-40 { display: grid; grid-template-columns: 60fr 40fr; gap: 18px; }
+  .grid-65-35 { display: grid; grid-template-columns: 65fr 35fr; gap: 18px; }
+
+  /* ── FORMS ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 10px; font-weight: bold; color: var(--grey); text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select, .form-group textarea {
+    font-family: Arial, sans-serif; font-size: 12px;
+    padding: 7px 10px; border: 1px solid var(--grey-tint1);
+    border-radius: 4px; background: var(--grey-tint3);
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none; border-color: var(--orange); background: var(--white);
+  }
+  .form-span2 { grid-column: span 2; }
+
+  /* ── SEARCH ── */
+  .search-bar { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; flex-wrap: wrap; }
+  .search-bar input {
+    font-family: Arial, sans-serif; font-size: 12px;
+    padding: 7px 12px; border: 1px solid var(--grey-tint1);
+    border-radius: 4px; width: 260px; background: var(--white);
+  }
+  .search-bar input:focus { outline: none; border-color: var(--orange); }
+  .search-bar select {
+    font-family: Arial, sans-serif; font-size: 12px;
+    border: 1px solid var(--grey-tint1); padding: 7px 10px;
+    border-radius: 4px; background: var(--white);
+  }
+
+  /* ── ALERT ── */
+  .alert {
+    padding: 10px 15px; border-radius: 4px;
+    font-size: 12px; margin-bottom: 15px;
+    border-left: 4px solid; display: flex; align-items: center; gap: 9px;
+  }
+  .alert-warn    { background: rgba(233,176,31,0.08); border-color: var(--yellow); color: #7a5c00; }
+  .alert-info    { background: var(--orange-tint3); border-color: var(--orange-light); color: #6b3a1f; }
+  .alert-ok      { background: rgba(5,150,105,0.07); border-color: var(--green); color: var(--green); }
+  .alert-neutral { background: var(--grey-tint3); border-color: var(--grey-tint1); color: #555; }
+
+  /* ── BAR CHART ── */
+  .bar-chart-area { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding-bottom: 24px; position: relative; }
+  .bar-group { display: flex; flex-direction: column; align-items: center; flex: 1; height: 100%; justify-content: flex-end; }
+  .bar-group .bars { display: flex; align-items: flex-end; gap: 3px; }
+  .bar { width: 18px; border-radius: 2px 2px 0 0; transition: opacity 0.15s; }
+  .bar:hover { opacity: 0.75; }
+  .bar-b { background: var(--grey-tint1); }
+  .bar-u { background: var(--orange-light); }
+  .bar-u.over { background: var(--red); opacity: 0.7; }
+  .bar-label { font-size: 9px; color: var(--grey); margin-top: 4px; text-align: center; }
+  .chart-legend { display: flex; gap: 16px; margin-top: 10px; }
+  .leg-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--grey); }
+  .leg-dot { width: 11px; height: 11px; border-radius: 2px; }
+
+  /* ── PERIOD SELECTOR (Utfall) ── */
+  .utfall-controls {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+    padding: 14px 18px;
+    background: var(--orange-tint3);
+    border-bottom: 1px solid var(--orange-tint1);
+  }
+  .utfall-controls label { font-size: 11px; color: var(--grey); font-weight: bold; }
+  .utfall-controls select, .utfall-controls input {
+    font-family: Arial, sans-serif; font-size: 12px;
+    border: 1px solid var(--orange-tint1); padding: 6px 10px;
+    border-radius: 4px; background: var(--white);
+  }
+  .utfall-controls select:focus, .utfall-controls input:focus { outline: none; border-color: var(--orange); }
+  .utfall-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--white); border: 1px solid var(--orange-tint1);
+    border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--orange);
+    font-weight: bold;
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35); z-index: 2000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--white); border-radius: 5px;
+    width: 560px; max-width: 95vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15); overflow: hidden;
+  }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 20px; background: #1a1a1a; color: var(--white);
+  }
+  .modal-header h3 { font-size: 14px; color: var(--white); }
+  .modal-close { background: none; border: none; color: var(--grey); font-size: 18px; cursor: pointer; }
+  .modal-body { padding: 22px; }
+  .modal-footer {
+    padding: 12px 20px; background: var(--grey-tint3);
+    border-top: 1px solid var(--grey-tint1);
+    display: flex; justify-content: flex-end; gap: 8px;
+  }
+
+  /* ── MISC ── */
+  .mt-16 { margin-top: 16px; }
+  .mb-16 { margin-bottom: 16px; }
+  .text-muted { color: var(--grey); }
+  .text-orange { color: var(--orange); }
+  .text-sm { font-size: 11px; }
+  .fw-bold { font-weight: bold; }
+  .divider { height: 1px; background: var(--grey-tint1); margin: 16px 0; }
+  .flex-row { display: flex; gap: 10px; align-items: center; }
+  .spacer { flex: 1; }
+  .watermark {
+    position: fixed; bottom: 14px; right: 18px;
+    font-family: Georgia, serif; font-size: 10px;
+    color: var(--grey-tint1); pointer-events: none; z-index: 5000;
+  }
+
+  /* ── UTFALL HIGHLIGHT ROW ── */
+  .row-highlight { background: var(--orange-tint3) !important; }
+  .row-total td { background: var(--grey-tint2); font-weight: bold; border-top: 2px solid var(--grey-tint1); }
+
+  /* ── SPARKLINE ── */
+  .spark { display: flex; align-items: flex-end; gap: 2px; height: 28px; }
+  .spark-bar { width: 5px; border-radius: 1px 1px 0 0; background: var(--orange-light); }
+
+  @media(max-width:900px){
+    .grid-2,.grid-3,.grid-60-40,.grid-65-35{grid-template-columns:1fr;}
+    #sidebar{transform:translateX(-100%);}
+    #main{margin-left:0;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-top">
+      <div class="login-title">Ekonomisystem</div>
+      <div class="login-sub">Fiktiva Kommunen — Controllerprogrammet 2026</div>
+    </div>
+    <div class="login-body">
+      <div class="form-group">
+        <label>E-postadress</label>
+        <input type="email" id="login-email" placeholder="namn@fiktivakommunen.se" autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>Lösenord</label>
+        <input type="password" id="login-pw" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <button class="login-btn" onclick="doLogin()">Logga in</button>
+      <p id="login-err" style="color:var(--red);font-size:11px;margin-top:10px;display:none;text-align:center">
+        Fyll i e-postadress och lösenord.
+      </p>
+    </div>
+    <div class="login-footer">Demo-system · All data är fiktiv · Controllerprogrammet 2026</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     APP
+════════════════════════════════════════════ -->
+<div id="app">
+
+  <!-- TOP HEADER -->
+  <header id="top-header">
+    <div class="header-left">
+      <div class="app-title">Fiktiva <span>Kommunen</span></div>
+      <div class="header-sub">Ekonomisystem · Demo 2026</div>
+    </div>
+    <div class="header-right">
+      <span class="username" id="header-user">Karin Karlsson</span>
+      <div class="avatar" id="header-avatar">KK</div>
+      <button class="logout-btn" onclick="doLogout()">Logga ut</button>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div id="layout">
+
+    <!-- SIDEBAR -->
+    <aside id="sidebar">
+      <div class="org-box">
+        <div class="org-name">Fiktiva Kommunen</div>
+        <div class="org-year">Räkenskapsår 2026</div>
+      </div>
+      <nav>
+        <ul>
+          <li class="nav-section-label">ÖVERSIKT</li>
+          <li class="active" id="nav-dashboard">
+            <span onclick="showPage('dashboard','nav-dashboard')">
+              <span class="nav-icon">📊</span> Dashboard
+            </span>
+          </li>
+
+          <li class="nav-section-label">EKONOMI</li>
+          <li id="nav-utfall">
+            <span onclick="showPage('utfall','nav-utfall')">
+              <span class="nav-icon">📈</span> Utfall & Prognos
+            </span>
+          </li>
+          <li id="nav-budget">
+            <span onclick="showPage('budget','nav-budget')">
+              <span class="nav-icon">📋</span> Budget
+            </span>
+          </li>
+          <li id="nav-redovisning">
+            <span onclick="showPage('redovisning','nav-redovisning')">
+              <span class="nav-icon">📒</span> Redovisning
+            </span>
+          </li>
+
+          <li class="nav-section-label">KUND & LEVERANTÖR</li>
+          <li id="nav-fakturor">
+            <span onclick="showPage('fakturor','nav-fakturor')">
+              <span class="nav-icon">🧾</span> Fakturor
+            </span>
+          </li>
+          <li id="nav-kunder">
+            <span onclick="showPage('kunder','nav-kunder')">
+              <span class="nav-icon">🏢</span> Kunder & Leverantörer
+            </span>
+          </li>
+
+          <li class="nav-section-label">VERKSAMHETER</li>
+          <li id="nav-verksamheter">
+            <span onclick="showPage('verksamheter','nav-verksamheter')">
+              <span class="nav-icon">🏫</span> Verksamheter
+            </span>
+          </li>
+          <li id="nav-kontoplan">
+            <span onclick="showPage('kontoplan','nav-kontoplan')">
+              <span class="nav-icon">🗂️</span> Kontoplan
+            </span>
+          </li>
+
+          <li class="nav-section-label">RAPPORTER</li>
+          <li id="nav-rapporter">
+            <span onclick="showPage('rapporter','nav-rapporter')">
+              <span class="nav-icon">📄</span> Rapporter
+            </span>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <main id="main">
+
+      <!-- ══════════ DASHBOARD ══════════ -->
+      <section class="page active" id="page-dashboard">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Dashboard</span></div>
+        <div class="page-title-bar">
+          <h2>Dashboard – Fiktiva Kommunen</h2>
+          <div class="period-selector">
+            <select><option>Jan–Apr 2026</option><option>Jan–Mar 2026</option><option>Jan–Feb 2026</option></select>
+            <button class="btn btn-primary">Uppdatera</button>
+          </div>
+        </div>
+
+        <div class="alert alert-warn">⚠️ <strong>LSS Boende</strong> överskrider budget med 4,2 %. Åtgärd krävs senast 2026-05-15.</div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card accent">
+            <div class="kpi-label">Total budget 2026</div>
+            <div class="kpi-value">842 Mkr</div>
+            <div class="kpi-sub">Helår, alla verksamheter</div>
+          </div>
+          <div class="kpi-card status-ok">
+            <div class="kpi-label">Utfall jan–apr</div>
+            <div class="kpi-value">268 Mkr</div>
+            <div class="kpi-sub">31,8 % av helårsbudget</div>
+            <div class="kpi-delta pos">▲ +2,1 Mkr vs plan</div>
+          </div>
+          <div class="kpi-card status-err">
+            <div class="kpi-label">Prognosavvikelse</div>
+            <div class="kpi-value">−12,4 Mkr</div>
+            <div class="kpi-sub">Helårsprognos vs budget</div>
+            <div class="kpi-delta neg">▼ Underskottsrisk</div>
+          </div>
+          <div class="kpi-card status-warn">
+            <div class="kpi-label">Ej attesterade fakturor</div>
+            <div class="kpi-value">47 st</div>
+            <div class="kpi-sub">Värde: 3,8 Mkr</div>
+            <div class="kpi-delta neutral">⏳ Väntar attest</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Aktiva verksamheter</div>
+            <div class="kpi-value">14 st</div>
+            <div class="kpi-sub">Räkenskapsår 2026</div>
+          </div>
+          <div class="kpi-card status-ok">
+            <div class="kpi-label">Periodens resultat</div>
+            <div class="kpi-value">+4,6 Mkr</div>
+            <div class="kpi-sub">Jan–apr netto</div>
+            <div class="kpi-delta pos">▲ Över plan</div>
+          </div>
+        </div>
+
+        <div class="grid-65-35">
+          <div class="card">
+            <div class="card-header">
+              <h3>Budget vs Utfall per verksamhet – Jan–Apr 2026 (Mkr)</h3>
+              <div class="card-actions"><button class="btn btn-secondary" style="font-size:10px">Exportera</button></div>
+            </div>
+            <div class="card-body">
+              <div class="bar-chart-area" id="dash-chart"></div>
+              <div class="chart-legend">
+                <div class="leg-item"><div class="leg-dot" style="background:var(--grey-tint1)"></div>Budget</div>
+                <div class="leg-item"><div class="leg-dot" style="background:var(--orange-light)"></div>Utfall</div>
+                <div class="leg-item"><div class="leg-dot" style="background:var(--red);opacity:0.7"></div>Överskridande</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Avvikelse per nämnd</h3></div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>Nämnd</th><th class="num">Avvik. tkr</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>Grundskola</td><td class="num" style="color:#555">+707</td><td><span class="badge badge-ok">OK</span></td></tr>
+                  <tr><td>Förskola</td><td class="num" style="color:#555">+213</td><td><span class="badge badge-ok">OK</span></td></tr>
+                  <tr><td>LSS Boende</td><td class="num" style="color:var(--red)">−1 600</td><td><span class="badge badge-err">Överskr.</span></td></tr>
+                  <tr><td>Hemtjänst</td><td class="num" style="color:#9a7200">−600</td><td><span class="badge badge-warn">Varning</span></td></tr>
+                  <tr><td>IFO</td><td class="num" style="color:#555">+140</td><td><span class="badge badge-ok">OK</span></td></tr>
+                  <tr><td>Kultur & Fritid</td><td class="num" style="color:#555">+187</td><td><span class="badge badge-ok">OK</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header"><h3>Senaste verifikationer</h3></div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>Ver.nr</th><th>Datum</th><th>Text</th><th class="num">Belopp</th></tr></thead>
+                <tbody>
+                  <tr><td>V-20264812</td><td>2026-04-28</td><td>Lönekörning apr</td><td class="num">−1 842 400</td></tr>
+                  <tr><td>V-20264811</td><td>2026-04-27</td><td>Hyra lokaler apr</td><td class="num">−284 000</td></tr>
+                  <tr><td>V-20264810</td><td>2026-04-26</td><td>IT-licenser Q2</td><td class="num">−148 200</td></tr>
+                  <tr><td>V-20264809</td><td>2026-04-25</td><td>Statsbidrag grundskola</td><td class="num">+620 000</td></tr>
+                  <tr><td>V-20264808</td><td>2026-04-24</td><td>Fordonskostnader</td><td class="num">−52 800</td></tr>
+                  <tr><td>V-20264807</td><td>2026-04-23</td><td>Städtjänster LSS</td><td class="num">−96 500</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>Uppgifter att åtgärda</h3></div>
+            <div class="card-body">
+              <table class="data-table">
+                <thead><tr><th>Uppgift</th><th>Ansvarig</th><th>Deadline</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>Attestera fakturor batch 04</td><td>Karin Karlsson</td><td>2026-05-02</td><td><span class="badge badge-warn">Pågår</span></td></tr>
+                  <tr><td>Månadsavstämning apr</td><td>Peter Persson</td><td>2026-05-05</td><td><span class="badge badge-grey">Ej start.</span></td></tr>
+                  <tr><td>Prognos Q2 uppdatering</td><td>Maria Månsson</td><td>2026-05-10</td><td><span class="badge badge-grey">Ej start.</span></td></tr>
+                  <tr><td>Granska LSS avvikelse</td><td>Lars Lindqvist</td><td>2026-05-08</td><td><span class="badge badge-err">Brådskande</span></td></tr>
+                  <tr><td>Budget 2027 underlag</td><td>Karin Karlsson</td><td>2026-06-01</td><td><span class="badge badge-grey">Ej start.</span></td></tr>
+                  <tr><td>Bokslutsförberedelse Q1</td><td>Anna Andersson</td><td>2026-04-30</td><td><span class="badge badge-ok">Klar</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ UTFALL & PROGNOS ══════════ -->
+      <section class="page" id="page-utfall">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Utfall & Prognos</span></div>
+        <div class="page-title-bar">
+          <h2>Utfall & Prognos</h2>
+        </div>
+
+        <!-- Interactive controls -->
+        <div class="card" style="margin-bottom:18px">
+          <div class="utfall-controls">
+            <label>Verksamhet</label>
+            <select id="uf-verk" onchange="renderUtfall()">
+              <option value="alla">Alla verksamheter</option>
+              <option value="grundskola">Grundskola</option>
+              <option value="forskola">Förskola</option>
+              <option value="lss">LSS Boende</option>
+              <option value="hemtjanst">Hemtjänst</option>
+              <option value="ifo">IFO</option>
+              <option value="kf">Kultur & Fritid</option>
+            </select>
+            <label>Vy</label>
+            <select id="uf-vy" onchange="renderUtfall()">
+              <option value="manad">Per månad</option>
+              <option value="kvartal">Per kvartal</option>
+              <option value="helår">Helårsprognos</option>
+            </select>
+            <label>Från period</label>
+            <select id="uf-from" onchange="renderUtfall()">
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Mars</option>
+            </select>
+            <label>Till period</label>
+            <select id="uf-to" onchange="renderUtfall()">
+              <option value="4" selected>April</option>
+              <option value="3">Mars</option>
+              <option value="2">Februari</option>
+              <option value="1">Januari</option>
+            </select>
+            <label>Typ</label>
+            <select id="uf-typ" onchange="renderUtfall()">
+              <option value="resultat">Resultat</option>
+              <option value="intakt">Intäkter</option>
+              <option value="kostnad">Kostnader</option>
+            </select>
+            <div class="spacer"></div>
+            <span class="utfall-chip" id="uf-chip">Jan–Apr · Alla · Resultat</span>
+          </div>
+        </div>
+
+        <!-- KPIs dynamic -->
+        <div class="kpi-grid" id="uf-kpi-row">
+          <!-- filled by JS -->
+        </div>
+
+        <!-- Chart -->
+        <div class="card mb-16">
+          <div class="card-header">
+            <h3 id="uf-chart-title">Budget vs Utfall – Alla verksamheter · Jan–Apr 2026</h3>
+            <div class="card-actions">
+              <button class="btn btn-light" style="font-size:10px" onclick="openModal('modal-ny-ver')">+ Verifikation</button>
+              <button class="btn btn-secondary" style="font-size:10px">📥 Exportera</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="bar-chart-area" id="uf-chart" style="height:170px"></div>
+            <div class="chart-legend">
+              <div class="leg-item"><div class="leg-dot" style="background:var(--grey-tint1)"></div>Budget</div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--orange-light)"></div>Utfall</div>
+              <div class="leg-item"><div class="leg-dot" style="background:var(--red);opacity:0.7"></div>Överskridande</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail table -->
+        <div class="card">
+          <div class="card-header">
+            <h3 id="uf-table-title">Detaljrapport – Alla verksamheter · Jan–Apr 2026</h3>
+            <div class="card-actions">
+              <span class="text-muted text-sm" id="uf-updated">Uppdaterad: 2026-05-02 08:14</span>
+            </div>
+          </div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table" id="uf-detail-table">
+              <thead>
+                <tr>
+                  <th>Konto</th>
+                  <th>Benämning</th>
+                  <th>Verksamhet</th>
+                  <th class="num" id="uf-th-budget">Budget ack. tkr</th>
+                  <th class="num" id="uf-th-utfall">Utfall ack. tkr</th>
+                  <th class="num">Avvikelse tkr</th>
+                  <th class="num">Avvik. %</th>
+                  <th class="num">Prognos helår</th>
+                  <th>Trend</th>
+                </tr>
+              </thead>
+              <tbody id="uf-tbody"><!-- filled by JS --></tbody>
+              <tfoot id="uf-tfoot"><!-- filled by JS --></tfoot>
+            </table>
+          </div>
+        </div>
+
+        <!-- Period comparison table -->
+        <div class="card mt-16">
+          <div class="card-header"><h3 id="uf-period-title">Månadsöversikt – Budget vs Utfall (tkr)</h3></div>
+          <div class="card-body" style="padding:0">
+            <table class="data-table" id="uf-period-table">
+              <thead>
+                <tr><th>Period</th><th class="num">Budget</th><th class="num">Utfall</th><th class="num">Avvikelse</th><th class="num">Ack. Budget</th><th class="num">Ack. Utfall</th><th>Status</th></tr>
+              </thead>
+              <tbody id="uf-period-tbody"><!-- filled by JS --></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ BUDGET ══════════ -->
+      <section class="page" id="page-budget">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Budget</span></div>
+        <div class="page-title-bar">
+          <h2>Budgetöversikt 2026</h2>
+          <div class="period-selector">
+            <select id="bud-filter" onchange="filterBudget()">
+              <option value="all">Alla verksamheter</option>
+              <option value="grundskola">Grundskola</option>
+              <option value="forskola">Förskola</option>
+              <option value="lss">LSS Boende</option>
+              <option value="hemtjanst">Hemtjänst</option>
+              <option value="ifo">IFO</option>
+            </select>
+            <button class="btn btn-primary" onclick="openModal('modal-ny-budget')">+ Ny budgetrad</button>
+          </div>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card accent">
+            <div class="kpi-label">Total driftsbudget</div>
+            <div class="kpi-value">842 Mkr</div>
+            <div class="kpi-sub">Helår 2026</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Intäkter (budget)</div>
+            <div class="kpi-value">214 Mkr</div>
+            <div class="kpi-sub">Statsbidrag + taxor</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Kostnader (budget)</div>
+            <div class="kpi-value">628 Mkr</div>
+            <div class="kpi-sub">Personal + övrigt</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">Nettokostnad</div>
+            <div class="kpi-value">414 Mkr</div>
+            <div class="kpi-sub">Kommunbidrag</div>
+          </div>
+        </div>
+
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab(this,'tab-bud-ov')">Per verksamhet</button>
+          <button class="tab-btn" onclick="switchTab(this,'tab-bud-konto')">Per kontoklass</button>
+          <button class="tab-btn" onclick="switchTab(this,'tab-bud-period')">Per period</button>
+        </div>
+
+        <div class="tab-content active" id="tab-bud-ov">
+          <div class="card">
+            <div class="card-header"><h3>Budget per verksamhet (tkr)</h3><div class="card-actions"><button class="btn btn-secondary" style="font-size:10px">📥 Excel</button></div></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Verksamhet</th><th>Ansvarig</th><th class="num">Budget helår</th><th class="num">Ack. jan–apr</th><th class="num">Utfall jan–apr</th><th class="num">Avvikelse</th><th>Budgetgrad</th></tr></thead>
+                <tbody id="bud-tbody">
+                  <tr data-verk="grundskola"><td>Grundskola</td><td>Anna Andersson</td><td class="num">198 400</td><td class="num">66 133</td><td class="num">65 426</td><td class="num" style="color:#555">+707</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="forskola"><td>Förskola</td><td>Fredrik Fransson</td><td class="num">98 800</td><td class="num">32 933</td><td class="num">32 720</td><td class="num" style="color:#555">+213</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="lss"><td>LSS Boende</td><td>Lars Lindqvist</td><td class="num">92 640</td><td class="num">30 880</td><td class="num">32 480</td><td class="num" style="color:var(--red)">−1 600</td><td><div class="prog-wrap"><div class="prog-bar over" style="width:35%"></div></div></td></tr>
+                  <tr data-verk="hemtjanst"><td>Hemtjänst</td><td>Helena Holm</td><td class="num">70 320</td><td class="num">23 440</td><td class="num">24 040</td><td class="num" style="color:#9a7200">−600</td><td><div class="prog-wrap"><div class="prog-bar" style="width:34%"></div></div></td></tr>
+                  <tr data-verk="ifo"><td>IFO</td><td>Ingrid Ivarsson</td><td class="num">53 040</td><td class="num">17 680</td><td class="num">17 540</td><td class="num" style="color:#555">+140</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="lss"><td>LSS Daglig Verksamhet</td><td>Lars Lindqvist</td><td class="num">44 880</td><td class="num">14 960</td><td class="num">14 820</td><td class="num" style="color:#555">+140</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="hemtjanst"><td>Äldreomsorg Särsk. Boende</td><td>Helena Holm</td><td class="num">86 400</td><td class="num">28 800</td><td class="num">29 100</td><td class="num" style="color:#9a7200">−300</td><td><div class="prog-wrap"><div class="prog-bar" style="width:33.7%"></div></div></td></tr>
+                  <tr data-verk="grundskola"><td>Grundsärskola</td><td>Anna Andersson</td><td class="num">28 800</td><td class="num">9 600</td><td class="num">9 540</td><td class="num" style="color:#555">+60</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="ifo"><td>Familjerätt</td><td>Ingrid Ivarsson</td><td class="num">18 720</td><td class="num">6 240</td><td class="num">6 180</td><td class="num" style="color:#555">+60</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                  <tr data-verk="grundskola"><td>Elevhälsa</td><td>Anna Andersson</td><td class="num">14 400</td><td class="num">4 800</td><td class="num">4 760</td><td class="num" style="color:#555">+40</td><td><div class="prog-wrap"><div class="prog-bar accent" style="width:33%"></div></div></td></tr>
+                </tbody>
+                <tfoot><tr><td colspan="2"><strong>TOTALT</strong></td><td class="num">706 400</td><td class="num">235 466</td><td class="num">236 606</td><td class="num" style="color:var(--red)">−1 140</td><td></td></tr></tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-bud-konto">
+          <div class="card">
+            <div class="card-header"><h3>Budget per kontoklass</h3></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Klass</th><th>Benämning</th><th class="num">Årsbudget tkr</th><th class="num">Q1 budget</th><th class="num">Q1 utfall</th><th class="num">Avvikelse</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>3xxx</td><td>Intäkter</td><td class="num">214 000</td><td class="num">53 500</td><td class="num">54 820</td><td class="num" style="color:#555">+1 320</td><td><span class="badge badge-ok">OK</span></td></tr>
+                  <tr><td>4xxx</td><td>Verksamhetskostnader</td><td class="num">92 400</td><td class="num">23 100</td><td class="num">23 840</td><td class="num" style="color:var(--yellow)">−740</td><td><span class="badge badge-warn">Varning</span></td></tr>
+                  <tr><td>5xxx</td><td>Lokaler & fastigheter</td><td class="num">68 200</td><td class="num">17 050</td><td class="num">16 980</td><td class="num" style="color:#555">+70</td><td><span class="badge badge-ok">OK</span></td></tr>
+                  <tr><td>6xxx</td><td>Övriga externa kostnader</td><td class="num">54 800</td><td class="num">13 700</td><td class="num">14 110</td><td class="num" style="color:var(--yellow)">−410</td><td><span class="badge badge-warn">Varning</span></td></tr>
+                  <tr><td>7xxx</td><td>Personalkostnader</td><td class="num">412 000</td><td class="num">103 000</td><td class="num">104 280</td><td class="num" style="color:var(--red)">−1 280</td><td><span class="badge badge-err">Överskr.</span></td></tr>
+                  <tr><td>8xxx</td><td>Finansiella poster</td><td class="num">1 000</td><td class="num">250</td><td class="num">240</td><td class="num" style="color:#555">+10</td><td><span class="badge badge-ok">OK</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="tab-content" id="tab-bud-period">
+          <div class="card">
+            <div class="card-header"><h3>Månadsbudget – Totalöversikt (tkr)</h3></div>
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Period</th><th class="num">Budget</th><th class="num">Utfall</th><th class="num">Avvikelse</th><th class="num">Ack. Budget</th><th class="num">Ack. Utfall</th><th>Trend</th></tr></thead>
+                <tbody>
+                  <tr><td>Jan 2026</td><td class="num">70 120</td><td class="num">69 840</td><td class="num" style="color:#555">+280</td><td class="num">70 120</td><td class="num">69 840</td><td>📈</td></tr>
+                  <tr><td>Feb 2026</td><td class="num">70 120</td><td class="num">70 610</td><td class="num" style="color:var(--red)">−490</td><td class="num">140 240</td><td class="num">140 450</td><td>📉</td></tr>
+                  <tr><td>Mar 2026</td><td class="num">70 120</td><td class="num">69 920</td><td class="num" style="color:#555">+200</td><td class="num">210 360</td><td class="num">210 370</td><td>📈</td></tr>
+                  <tr><td>Apr 2026</td><td class="num">70 120</td><td class="num">67 840</td><td class="num" style="color:#555">+2 280</td><td class="num">280 480</td><td class="num">278 210</td><td>📈</td></tr>
+                  <tr class="text-muted"><td>Maj 2026 (prognos)</td><td class="num">70 120</td><td class="num">71 400*</td><td class="num" style="color:var(--red)">−1 280*</td><td class="num">350 600</td><td class="num">349 610*</td><td>⚠️</td></tr>
+                  <tr class="text-muted"><td>Jun–Dec 2026 (prognos)</td><td class="num">490 840</td><td class="num">491 200*</td><td class="num" style="color:var(--red)">−360*</td><td class="num">841 440</td><td class="num">840 810*</td><td>—</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:10px;color:var(--grey);padding:10px 13px">* Prognosvärden baserade på trend jan–apr 2026</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ REDOVISNING ══════════ -->
+      <section class="page" id="page-redovisning">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Redovisning</span></div>
+        <div class="page-title-bar">
+          <h2>Redovisning – Verifikationsjournal</h2>
+          <div class="period-selector">
+            <input type="month" value="2026-04">
+            <button class="btn btn-primary">Sök</button>
+            <button class="btn btn-outline" onclick="openModal('modal-ny-ver')">+ Ny verifikation</button>
+          </div>
+        </div>
+        <div class="search-bar">
+          <input type="text" placeholder="🔍 Sök verifikationsnummer, text..." id="ver-search" oninput="filterVer()">
+          <select id="ver-konto" onchange="filterVer()">
+            <option value="">Alla konton</option>
+            <option value="7010">7010 – Löner</option>
+            <option value="5010">5010 – Hyra</option>
+            <option value="6210">6210 – IT</option>
+            <option value="3110">3110 – Statsbidrag</option>
+          </select>
+          <span class="text-muted text-sm">Visar <strong id="ver-count">10</strong> poster</span>
+        </div>
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Ver.nr</th><th>Datum</th><th>Konto</th><th>Kontotext</th><th>Verksamhet</th><th>Text</th><th class="num">Debet</th><th class="num">Kredit</th><th>Attesterad av</th><th>Status</th></tr></thead>
+              <tbody id="ver-tbody">
+                <tr data-search="lönekörning 7010 grundskola"><td>V-20264812</td><td>2026-04-28</td><td>7010</td><td>Löner lärare</td><td>Grundskola</td><td>Lönekörning apr 2026</td><td class="num">1 842 400</td><td class="num">—</td><td>Peter Persson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="hyra 5010 gemensamt"><td>V-20264811</td><td>2026-04-27</td><td>5010</td><td>Hyra lokaler</td><td>Gemensamt</td><td>Månadshyra apr</td><td class="num">284 000</td><td class="num">—</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="it licenser 6210 gemensamt"><td>V-20264810</td><td>2026-04-26</td><td>6210</td><td>IT-licenser</td><td>Gemensamt</td><td>MS365 Q2-licens</td><td class="num">148 200</td><td class="num">—</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="statsbidrag 3110 grundskola"><td>V-20264809</td><td>2026-04-25</td><td>3110</td><td>Statsbidrag</td><td>Grundskola</td><td>Statsbidrag apr grundskola</td><td class="num">—</td><td class="num">620 000</td><td>Anna Andersson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="fordon 5610 hemtjänst"><td>V-20264808</td><td>2026-04-24</td><td>5610</td><td>Fordonskostnader</td><td>Hemtjänst</td><td>Dieselkostnad apr</td><td class="num">52 800</td><td class="num">—</td><td>Helena Holm</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="städ 6910 lss"><td>V-20264807</td><td>2026-04-23</td><td>6910</td><td>Städtjänster</td><td>LSS Boende</td><td>Städning LSS-bostäder</td><td class="num">96 500</td><td class="num">—</td><td>Lars Lindqvist</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="löner 7110 lss övertid"><td>V-20264806</td><td>2026-04-22</td><td>7110</td><td>Löner LSS</td><td>LSS Boende</td><td>Övertidstillägg apr</td><td class="num">184 300</td><td class="num">—</td><td>Lars Lindqvist</td><td><span class="badge badge-warn">Granskas</span></td></tr>
+                <tr data-search="material 4110 grundskola"><td>V-20264805</td><td>2026-04-21</td><td>4110</td><td>Pedagogiskt material</td><td>Grundskola</td><td>Läromedel åk 1–3</td><td class="num">42 600</td><td class="num">—</td><td>Anna Andersson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="socialbidrag 4210 ifo"><td>V-20264804</td><td>2026-04-20</td><td>4210</td><td>Ekonomiskt bistånd</td><td>IFO</td><td>Socialbidrag apr batch</td><td class="num">384 000</td><td class="num">—</td><td>Ingrid Ivarsson</td><td><span class="badge badge-ok">Bokförd</span></td></tr>
+                <tr data-search="rättelse löner 7010 grundskola"><td>V-20264803</td><td>2026-04-19</td><td>7010</td><td>Löner lärare</td><td>Grundskola</td><td>Rättelse lön feb–mar</td><td class="num">12 400</td><td class="num">—</td><td>Peter Persson</td><td><span class="badge badge-grey">Makulerad</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ FAKTUROR ══════════ -->
+      <section class="page" id="page-fakturor">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Fakturor</span></div>
+        <div class="page-title-bar">
+          <h2>Fakturahantering</h2>
+          <div class="period-selector"><button class="btn btn-primary" onclick="openModal('modal-ny-faktura')">+ Ny faktura</button></div>
+        </div>
+        <div class="kpi-grid">
+          <div class="kpi-card accent"><div class="kpi-label">Öppna leverantörsfakturor</div><div class="kpi-value">83 st</div><div class="kpi-sub">Värde: 6,2 Mkr</div></div>
+          <div class="kpi-card status-warn"><div class="kpi-label">Ej attesterade</div><div class="kpi-value">47 st</div><div class="kpi-sub">Värde: 3,8 Mkr</div></div>
+          <div class="kpi-card status-err"><div class="kpi-label">Förfallna fakturor</div><div class="kpi-value">12 st</div><div class="kpi-sub">Värde: 0,9 Mkr</div></div>
+          <div class="kpi-card status-ok"><div class="kpi-label">Betalade (apr)</div><div class="kpi-value">142 st</div><div class="kpi-sub">Värde: 11,4 Mkr</div></div>
+        </div>
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab(this,'tab-lev')">Leverantörsfakturor</button>
+          <button class="tab-btn" onclick="switchTab(this,'tab-kund-f')">Kundfakturor</button>
+          <button class="tab-btn" onclick="switchTab(this,'tab-attest')">Attestflöde</button>
+        </div>
+        <div class="tab-content active" id="tab-lev">
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Fakt.nr</th><th>Leverantör</th><th>Verksamhet</th><th>Fakturadatum</th><th>Förfallodatum</th><th class="num">Belopp kr</th><th>Konto</th><th>Attestant</th><th>Status</th><th>Åtgärd</th></tr></thead>
+                <tbody>
+                  <tr><td>LF-2026-1842</td><td>Städbolaget Svensson AB</td><td>LSS Boende</td><td>2026-04-20</td><td>2026-05-20</td><td class="num">84 500</td><td>6910</td><td>Lars Lindqvist</td><td><span class="badge badge-warn">Väntar attest</span></td><td><button class="btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="openModal('modal-attest')">Attestera</button></td></tr>
+                  <tr><td>LF-2026-1841</td><td>IT Innovatörer AB</td><td>Gemensamt</td><td>2026-04-18</td><td>2026-05-18</td><td class="num">148 200</td><td>6210</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Attesterad</span></td><td><button class="btn btn-secondary" style="font-size:10px;padding:3px 10px">Visa</button></td></tr>
+                  <tr><td>LF-2026-1840</td><td>Läromedel Larsson & Co</td><td>Grundskola</td><td>2026-04-15</td><td>2026-05-15</td><td class="num">42 600</td><td>4110</td><td>Anna Andersson</td><td><span class="badge badge-ok">Betald</span></td><td><button class="btn btn-secondary" style="font-size:10px;padding:3px 10px">Visa</button></td></tr>
+                  <tr><td>LF-2026-1839</td><td>Fastighetsförvaltning Falk AB</td><td>Gemensamt</td><td>2026-04-01</td><td>2026-04-30</td><td class="num">284 000</td><td>5010</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Betald</span></td><td><button class="btn btn-secondary" style="font-size:10px;padding:3px 10px">Visa</button></td></tr>
+                  <tr><td>LF-2026-1838</td><td>Bemanningsbolaget Berg AB</td><td>LSS Boende</td><td>2026-03-31</td><td>2026-04-28</td><td class="num">226 400</td><td>7120</td><td>Lars Lindqvist</td><td><span class="badge badge-err">Förfallen</span></td><td><button class="btn btn-primary" style="font-size:10px;padding:3px 10px;background:var(--red)" onclick="openModal('modal-attest')">Betala</button></td></tr>
+                  <tr><td>LF-2026-1837</td><td>Måltidsservice Magnusson</td><td>Grundskola</td><td>2026-04-05</td><td>2026-05-05</td><td class="num">96 800</td><td>4310</td><td>Anna Andersson</td><td><span class="badge badge-warn">Väntar attest</span></td><td><button class="btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="openModal('modal-attest')">Attestera</button></td></tr>
+                  <tr><td>LF-2026-1836</td><td>Transportsällskapet Thorsén</td><td>Hemtjänst</td><td>2026-04-12</td><td>2026-05-12</td><td class="num">38 400</td><td>5610</td><td>Helena Holm</td><td><span class="badge badge-ok">Attesterad</span></td><td><button class="btn btn-secondary" style="font-size:10px;padding:3px 10px">Visa</button></td></tr>
+                  <tr><td>LF-2026-1835</td><td>Familjehemsbolaget Fors AB</td><td>IFO</td><td>2026-04-08</td><td>2026-05-08</td><td class="num">184 000</td><td>4810</td><td>Ingrid Ivarsson</td><td><span class="badge badge-warn">Väntar attest</span></td><td><button class="btn btn-primary" style="font-size:10px;padding:3px 10px" onclick="openModal('modal-attest')">Attestera</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-kund-f">
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Fakt.nr</th><th>Kund</th><th>Verksamhet</th><th>Fakturadatum</th><th>Förfallodatum</th><th class="num">Belopp kr</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>KF-2026-0412</td><td>Region Fiktiva</td><td>Gemensamt</td><td>2026-04-01</td><td>2026-04-30</td><td class="num">124 000</td><td><span class="badge badge-ok">Betald</span></td></tr>
+                  <tr><td>KF-2026-0411</td><td>Fiktiva Skolstiftelsen</td><td>Grundskola</td><td>2026-04-05</td><td>2026-05-05</td><td class="num">48 600</td><td><span class="badge badge-light">Utskickad</span></td></tr>
+                  <tr><td>KF-2026-0410</td><td>Privat Vårdgivare Persson AB</td><td>LSS Boende</td><td>2026-03-25</td><td>2026-04-25</td><td class="num">32 400</td><td><span class="badge badge-err">Förfallen</span></td></tr>
+                  <tr><td>KF-2026-0409</td><td>Hyresgäst Hansson</td><td>Fastigheter</td><td>2026-04-01</td><td>2026-04-30</td><td class="num">8 400</td><td><span class="badge badge-ok">Betald</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-attest">
+          <div class="alert alert-warn">⚠️ 47 fakturor kräver attest. Totalt värde: 3 847 200 kr.</div>
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Attestant</th><th class="num">Antal</th><th class="num">Värde kr</th><th>Äldsta faktura</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>Karin Karlsson</td><td class="num">12</td><td class="num">984 200</td><td>2026-04-02</td><td><span class="badge badge-warn">Brådskande</span></td></tr>
+                  <tr><td>Lars Lindqvist</td><td class="num">18</td><td class="num">1 642 400</td><td>2026-03-31</td><td><span class="badge badge-err">Försenad</span></td></tr>
+                  <tr><td>Anna Andersson</td><td class="num">8</td><td class="num">684 000</td><td>2026-04-08</td><td><span class="badge badge-warn">Pågår</span></td></tr>
+                  <tr><td>Helena Holm</td><td class="num">5</td><td class="num">286 400</td><td>2026-04-14</td><td><span class="badge badge-grey">Normal</span></td></tr>
+                  <tr><td>Ingrid Ivarsson</td><td class="num">4</td><td class="num">250 200</td><td>2026-04-18</td><td><span class="badge badge-grey">Normal</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ KUNDER & LEVERANTÖRER ══════════ -->
+      <section class="page" id="page-kunder">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Kunder & Leverantörer</span></div>
+        <div class="page-title-bar"><h2>Kunder & Leverantörer</h2><div class="period-selector"><button class="btn btn-primary" onclick="openModal('modal-ny-kund')">+ Ny</button></div></div>
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab(this,'tab-kund-reg')">Kunder</button>
+          <button class="tab-btn" onclick="switchTab(this,'tab-lev-reg')">Leverantörer</button>
+        </div>
+        <div class="tab-content active" id="tab-kund-reg">
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Kund-ID</th><th>Namn</th><th>Typ</th><th>Kontakt</th><th class="num">Saldo kr</th><th>Ansvarig</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>K-0041</td><td>Region Fiktiva</td><td>Region</td><td>region@fiktiva.se</td><td class="num" style="color:var(--green)">+124 000</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>K-0042</td><td>Fiktiva Skolstiftelsen</td><td>Stiftelse</td><td>info@fskola.se</td><td class="num" style="color:var(--red)">−48 600</td><td>Anna Andersson</td><td><span class="badge badge-warn">Utestående</span></td></tr>
+                  <tr><td>K-0043</td><td>Privat Vårdgivare Persson AB</td><td>Bolag</td><td>vp@pvab.se</td><td class="num" style="color:var(--red)">−32 400</td><td>Lars Lindqvist</td><td><span class="badge badge-err">Förfallen</span></td></tr>
+                  <tr><td>K-0044</td><td>Hyresgäst Hansson</td><td>Privatperson</td><td>hh@mail.se</td><td class="num">0</td><td>Helena Holm</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>K-0045</td><td>Fiktiva IF</td><td>Förening</td><td>info@fif.se</td><td class="num" style="color:var(--green)">+12 000</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-lev-reg">
+          <div class="card">
+            <div class="card-body" style="padding:0">
+              <table class="data-table">
+                <thead><tr><th>Lev-ID</th><th>Namn</th><th>Kategori</th><th class="num">Köp jan–apr kr</th><th>Betalvillkor</th><th>Godkänd av</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>L-0101</td><td>Bemanningsbolaget Berg AB</td><td>Bemanning</td><td class="num">2 842 400</td><td>30 dagar</td><td>Lars Lindqvist</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0102</td><td>IT Innovatörer AB</td><td>IT</td><td class="num">592 800</td><td>30 dagar</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0103</td><td>Fastighetsförvaltning Falk AB</td><td>Fastighet</td><td class="num">1 136 000</td><td>30 dagar</td><td>Karin Karlsson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0104</td><td>Läromedel Larsson & Co</td><td>Utbildning</td><td class="num">170 400</td><td>14 dagar</td><td>Anna Andersson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0105</td><td>Städbolaget Svensson AB</td><td>Städ</td><td class="num">338 000</td><td>30 dagar</td><td>Lars Lindqvist</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0106</td><td>Måltidsservice Magnusson</td><td>Livsmedel</td><td class="num">387 200</td><td>14 dagar</td><td>Anna Andersson</td><td><span class="badge badge-warn">Granskas</span></td></tr>
+                  <tr><td>L-0107</td><td>Transportsällskapet Thorsén</td><td>Transport</td><td class="num">153 600</td><td>30 dagar</td><td>Helena Holm</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                  <tr><td>L-0108</td><td>Familjehemsbolaget Fors AB</td><td>Vård & Omsorg</td><td class="num">736 000</td><td>30 dagar</td><td>Ingrid Ivarsson</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ VERKSAMHETER ══════════ -->
+      <section class="page" id="page-verksamheter">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Verksamheter</span></div>
+        <div class="page-title-bar"><h2>Verksamhetsöversikt 2026</h2></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--orange)"><h3>🏫 Grundskola</h3></div>
+            <div class="card-body">
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Antal elever</td><td class="num">1 842</td><td>st</td></tr>
+                <tr><td>Lärartjänster</td><td class="num">124</td><td>heltid</td></tr>
+                <tr><td>Kostnad per elev (plan)</td><td class="num">107 700</td><td>kr/år</td></tr>
+                <tr><td>Meritpoäng åk 9 (snitt)</td><td class="num">219</td><td>poäng</td></tr>
+                <tr><td>Budget helår</td><td class="num">198 400</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">65 426</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:#555">+707</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Anna Andersson</strong> · Barn & Utbildning</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--orange-med)"><h3>🧒 Förskola</h3></div>
+            <div class="card-body">
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Inskrivna barn</td><td class="num">684</td><td>st</td></tr>
+                <tr><td>Avdelningar</td><td class="num">38</td><td>st</td></tr>
+                <tr><td>Kostnad per barn (plan)</td><td class="num">144 400</td><td>kr/år</td></tr>
+                <tr><td>Maxtaxeintäkter</td><td class="num">12 400</td><td>tkr/år</td></tr>
+                <tr><td>Budget helår</td><td class="num">98 800</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">32 720</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:#555">+213</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Fredrik Fransson</strong> · Barn & Utbildning</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--red)"><h3>🏠 LSS Boende</h3></div>
+            <div class="card-body">
+              <div class="alert alert-warn">⚠️ Budgetöverskridande −1 600 tkr jan–apr. Prognos −4 800 tkr helår.</div>
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Antal boende</td><td class="num">42</td><td>st</td></tr>
+                <tr><td>Beläggningsgrad</td><td class="num">87,5</td><td>%</td></tr>
+                <tr><td>Timmar per boende/vecka</td><td class="num">84</td><td>tim</td></tr>
+                <tr><td>Budget helår</td><td class="num">92 640</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">32 480</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:var(--red)">−1 600</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Lars Lindqvist</strong> · Socialnämnden</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--grey-med)"><h3>🚗 Hemtjänst</h3></div>
+            <div class="card-body">
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Antal brukare</td><td class="num">214</td><td>st</td></tr>
+                <tr><td>Utförda timmar (apr)</td><td class="num">8 420</td><td>tim</td></tr>
+                <tr><td>Kostnad per timme</td><td class="num">412</td><td>kr</td></tr>
+                <tr><td>Budget helår</td><td class="num">70 320</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">24 040</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:#9a7200">−600</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Helena Holm</strong> · Socialnämnden</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--orange-light)"><h3>👨‍👩‍👧 IFO</h3></div>
+            <div class="card-body">
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Öppna ärenden</td><td class="num">186</td><td>st</td></tr>
+                <tr><td>Ekonomiskt bistånd (apr)</td><td class="num">384</td><td>tkr</td></tr>
+                <tr><td>Budget helår</td><td class="num">53 040</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">17 540</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:#555">+140</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Ingrid Ivarsson</strong> · Socialnämnden</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header" style="border-left:4px solid var(--orange-tint1)"><h3>🏊 Kultur & Fritid</h3></div>
+            <div class="card-body">
+              <table class="data-table"><thead><tr><th>Nyckeltal</th><th class="num">Värde</th><th>Enhet</th></tr></thead><tbody>
+                <tr><td>Besök anläggningar (apr)</td><td class="num">12 840</td><td>st</td></tr>
+                <tr><td>Föreningsbidrag jan–apr</td><td class="num">1 840</td><td>tkr</td></tr>
+                <tr><td>Budget helår</td><td class="num">35 520</td><td>tkr</td></tr>
+                <tr><td>Utfall jan–apr</td><td class="num">11 333</td><td>tkr</td></tr>
+                <tr><td>Avvikelse</td><td class="num" style="color:#555">+147</td><td>tkr</td></tr>
+              </tbody></table>
+              <p class="mt-16 text-sm text-muted">Ansvarig: <strong>Kalle Karlgren</strong> · Kommunstyrelsen</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ KONTOPLAN ══════════ -->
+      <section class="page" id="page-kontoplan">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Kontoplan</span></div>
+        <div class="page-title-bar">
+          <h2>Kontoplan – Fiktiva Kommunen</h2>
+          <div class="period-selector"><button class="btn btn-primary" onclick="openModal('modal-ny-konto')">+ Nytt konto</button></div>
+        </div>
+        <div class="alert alert-neutral">ℹ️ Kontoplanen följer BAS-kommunal standard med lokala tillägg. Totalt 284 aktiva konton.</div>
+        <div class="card">
+          <div class="card-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr><th>Kontonr</th><th>Benämning</th><th>Kontoklass</th><th>Typ</th><th>Moms</th><th>Resultatenhet</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr class="group-row"><td colspan="7">Klass 1 – Anläggningstillgångar</td></tr>
+                <tr><td>1110</td><td>Byggnader och mark</td><td>1xxx</td><td>Balans</td><td>Nej</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>1220</td><td>Inventarier och utrustning</td><td>1xxx</td><td>Balans</td><td>Nej</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr class="group-row"><td colspan="7">Klass 3 – Intäkter</td></tr>
+                <tr><td>3110</td><td>Statsbidrag – Grundskola</td><td>3xxx</td><td>Resultat</td><td>Nej</td><td>Grundskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>3120</td><td>Maxtaxa – Förskola</td><td>3xxx</td><td>Resultat</td><td>Nej</td><td>Förskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>3130</td><td>Kommunalskattebidrag</td><td>3xxx</td><td>Resultat</td><td>Nej</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>3210</td><td>Hyresintäkter</td><td>3xxx</td><td>Resultat</td><td>25 %</td><td>Fastigheter</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr class="group-row"><td colspan="7">Klass 4 – Verksamhetskostnader</td></tr>
+                <tr><td>4110</td><td>Pedagogiskt material</td><td>4xxx</td><td>Resultat</td><td>25 %</td><td>Grundskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>4210</td><td>Ekonomiskt bistånd</td><td>4xxx</td><td>Resultat</td><td>Nej</td><td>IFO</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>4310</td><td>Livsmedel och måltider</td><td>4xxx</td><td>Resultat</td><td>12 %</td><td>Grundskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>4810</td><td>Familjehemsplacering</td><td>4xxx</td><td>Resultat</td><td>Nej</td><td>IFO</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr class="group-row"><td colspan="7">Klass 5 – Lokaler & fastigheter</td></tr>
+                <tr><td>5010</td><td>Hyra lokaler</td><td>5xxx</td><td>Resultat</td><td>25 %</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>5610</td><td>Fordonskostnader</td><td>5xxx</td><td>Resultat</td><td>25 %</td><td>Hemtjänst</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr class="group-row"><td colspan="7">Klass 6 – Övriga externa kostnader</td></tr>
+                <tr><td>6210</td><td>IT-licenser och drift</td><td>6xxx</td><td>Resultat</td><td>25 %</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>6910</td><td>Städ och renhållning</td><td>6xxx</td><td>Resultat</td><td>25 %</td><td>LSS Boende</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr class="group-row"><td colspan="7">Klass 7 – Personalkostnader</td></tr>
+                <tr><td>7010</td><td>Löner lärare</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>Grundskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>7020</td><td>Löner specialpedagoger</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>Grundskola</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>7110</td><td>Löner LSS-personal</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>LSS Boende</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>7120</td><td>Löner inhyrd LSS-personal</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>LSS Boende</td><td><span class="badge badge-warn">Granskas</span></td></tr>
+                <tr><td>7210</td><td>Löner hemtjänstpersonal</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>Hemtjänst</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>7510</td><td>Arbetsgivaravgifter</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+                <tr><td>7610</td><td>Pensionskostnader</td><td>7xxx</td><td>Resultat</td><td>Nej</td><td>Gemensamt</td><td><span class="badge badge-ok">Aktiv</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════ RAPPORTER ══════════ -->
+      <section class="page" id="page-rapporter">
+        <div class="breadcrumb">Fiktiva Kommunen › <span>Rapporter</span></div>
+        <div class="page-title-bar"><h2>Rapportcenter</h2></div>
+        <div class="grid-3">
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header" style="background:var(--orange);color:white"><h3 style="color:white">📊 Månadsrapport</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Sammanfattning av periodens utfall, budget och avvikelser per nämnd.</p><p class="text-muted text-sm">Senast: 2026-04-30</p><div class="mt-16"><button class="btn btn-primary" style="width:100%">Kör rapport</button></div></div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header"><h3>📈 Prognos helår</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Helårsprognos baserad på utfall och trend. Visar förväntad avvikelse mot budget.</p><p class="text-muted text-sm">Senast: 2026-05-01</p><div class="mt-16"><button class="btn btn-outline" style="width:100%">Kör rapport</button></div></div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header"><h3>📋 Resultaträkning</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Kommunens resultaträkning per period med jämförelseperiod.</p><p class="text-muted text-sm">Senast: 2026-04-28</p><div class="mt-16"><button class="btn btn-outline" style="width:100%">Kör rapport</button></div></div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header"><h3>💳 Fakturarapport</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Öppna, attesterade och förfallna fakturor med åldersanalys.</p><p class="text-muted text-sm">Senast: 2026-05-01</p><div class="mt-16"><button class="btn btn-outline" style="width:100%">Kör rapport</button></div></div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header"><h3>🏫 Verksamhetsanalys</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Detaljanalys per verksamhet med nyckeltal och kostnadsdrivare.</p><p class="text-muted text-sm">Senast: 2026-04-25</p><div class="mt-16"><button class="btn btn-outline" style="width:100%">Kör rapport</button></div></div>
+          </div>
+          <div class="card" style="cursor:pointer" onmouseover="this.style.borderColor='var(--orange-light)'" onmouseout="this.style.borderColor='var(--grey-tint1)'">
+            <div class="card-header"><h3>📦 Leverantörsanalys</h3></div>
+            <div class="card-body"><p class="text-sm mb-16">Topp-leverantörer per kostnad, kategori och betalningsprofil.</p><p class="text-muted text-sm">Senast: 2026-04-20</p><div class="mt-16"><button class="btn btn-outline" style="width:100%">Kör rapport</button></div></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ════ MODALER ════ -->
+<div class="modal-overlay" id="modal-attest">
+  <div class="modal">
+    <div class="modal-header"><h3>Attestera faktura – LF-2026-1842</h3><button class="modal-close" onclick="closeModal('modal-attest')">✕</button></div>
+    <div class="modal-body">
+      <table class="data-table mb-16"><tbody>
+        <tr><td>Leverantör</td><td><strong>Städbolaget Svensson AB</strong></td></tr>
+        <tr><td>Belopp</td><td><strong>84 500 kr</strong></td></tr>
+        <tr><td>Konto</td><td>6910 – Städ och renhållning</td></tr>
+        <tr><td>Verksamhet</td><td>LSS Boende</td></tr>
+      </tbody></table>
+      <div class="form-grid">
+        <div class="form-group"><label>Attestant</label><input type="text" value="Karin Karlsson" readonly></div>
+        <div class="form-group"><label>Datum</label><input type="date" value="2026-05-02"></div>
+        <div class="form-group form-span2"><label>Kommentar</label><textarea rows="2" placeholder="Valfri kommentar..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-attest')">Avbryt</button>
+      <button class="btn" style="background:var(--red);color:white" onclick="closeModal('modal-attest')">Neka</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-attest');alert('✓ Faktura attesterad!')">Godkänn</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ny-ver">
+  <div class="modal">
+    <div class="modal-header"><h3>Ny verifikation</h3><button class="modal-close" onclick="closeModal('modal-ny-ver')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Datum</label><input type="date" value="2026-05-02"></div>
+        <div class="form-group"><label>Typ</label><select><option>Bokföringsorder</option><option>Löneverifikation</option><option>Faktura</option></select></div>
+        <div class="form-group"><label>Konto debet</label><input type="text" placeholder="ex. 7010"></div>
+        <div class="form-group"><label>Konto kredit</label><input type="text" placeholder="ex. 1920"></div>
+        <div class="form-group"><label>Belopp kr</label><input type="number" placeholder="0"></div>
+        <div class="form-group"><label>Verksamhet</label><select><option>Grundskola</option><option>Förskola</option><option>LSS Boende</option><option>Hemtjänst</option><option>IFO</option></select></div>
+        <div class="form-group form-span2"><label>Bokföringstext</label><input type="text" placeholder="Beskrivning..."></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ny-ver')">Avbryt</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ny-ver');alert('✓ Verifikation bokförd!')">Bokför</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ny-budget">
+  <div class="modal">
+    <div class="modal-header"><h3>Ny budgetrad</h3><button class="modal-close" onclick="closeModal('modal-ny-budget')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Konto</label><input type="text" placeholder="ex. 7010"></div>
+        <div class="form-group"><label>Verksamhet</label><select><option>Grundskola</option><option>Förskola</option><option>LSS Boende</option></select></div>
+        <div class="form-group"><label>Årsbudget tkr</label><input type="number" placeholder="0"></div>
+        <div class="form-group"><label>Fördelning</label><select><option>Jämn (1/12 per mån)</option><option>Säsongsanpassad</option><option>Manuell</option></select></div>
+        <div class="form-group form-span2"><label>Kommentar</label><textarea rows="2"></textarea></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ny-budget')">Avbryt</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ny-budget');alert('✓ Budgetrad sparad!')">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ny-faktura">
+  <div class="modal">
+    <div class="modal-header"><h3>Registrera ny faktura</h3><button class="modal-close" onclick="closeModal('modal-ny-faktura')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Leverantör</label><select><option>Städbolaget Svensson AB</option><option>IT Innovatörer AB</option><option>Läromedel Larsson & Co</option></select></div>
+        <div class="form-group"><label>Fakturanummer</label><input type="text" placeholder="Lev. fakturanr"></div>
+        <div class="form-group"><label>Fakturadatum</label><input type="date" value="2026-05-02"></div>
+        <div class="form-group"><label>Förfallodatum</label><input type="date" value="2026-06-01"></div>
+        <div class="form-group"><label>Belopp inkl. moms kr</label><input type="number" placeholder="0"></div>
+        <div class="form-group"><label>Konto</label><input type="text" placeholder="ex. 6910"></div>
+        <div class="form-group"><label>Verksamhet</label><select><option>Grundskola</option><option>Förskola</option><option>LSS Boende</option></select></div>
+        <div class="form-group"><label>Attestant</label><select><option>Karin Karlsson</option><option>Lars Lindqvist</option><option>Anna Andersson</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ny-faktura')">Avbryt</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ny-faktura');alert('✓ Faktura registrerad och skickad för attest!')">Registrera</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ny-kund">
+  <div class="modal">
+    <div class="modal-header"><h3>Ny kund / leverantör</h3><button class="modal-close" onclick="closeModal('modal-ny-kund')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Namn</label><input type="text" placeholder="Företagsnamn..."></div>
+        <div class="form-group"><label>Typ</label><select><option>Kund</option><option>Leverantör</option><option>Båda</option></select></div>
+        <div class="form-group"><label>E-post</label><input type="email" placeholder="info@..."></div>
+        <div class="form-group"><label>Betalvillkor</label><select><option>30 dagar</option><option>14 dagar</option><option>10 dagar</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ny-kund')">Avbryt</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ny-kund');alert('✓ Post skapad!')">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-ny-konto">
+  <div class="modal">
+    <div class="modal-header"><h3>Nytt konto</h3><button class="modal-close" onclick="closeModal('modal-ny-konto')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-grid">
+        <div class="form-group"><label>Kontonummer</label><input type="text" placeholder="ex. 7420"></div>
+        <div class="form-group"><label>Benämning</label><input type="text" placeholder="Kontonamn..."></div>
+        <div class="form-group"><label>Kontoklass</label><select><option>1xxx – Tillgångar</option><option>3xxx – Intäkter</option><option>4xxx – Verksamhetskostnader</option><option>5xxx – Lokaler</option><option>6xxx – Övriga kostnader</option><option>7xxx – Personal</option></select></div>
+        <div class="form-group"><label>Typ</label><select><option>Resultat</option><option>Balans</option></select></div>
+        <div class="form-group"><label>Momsplikt</label><select><option>Nej</option><option>Ja – 25%</option><option>Ja – 12%</option><option>Ja – 6%</option></select></div>
+        <div class="form-group"><label>Resultatenhet</label><select><option>Gemensamt</option><option>Grundskola</option><option>Förskola</option><option>LSS Boende</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-ny-konto')">Avbryt</button>
+      <button class="btn btn-primary" onclick="closeModal('modal-ny-konto');alert('✓ Konto sparat!')">Spara</button>
+    </div>
+  </div>
+</div>
+
+<div class="watermark">Demo · Fiktiv data · Controllerprogrammet 2026</div>
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
+<script>
+// ── LOGIN ──────────────────────────────────────
+function doLogin() {
+  const em = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value.trim();
+  if (!em || !pw) {
+    document.getElementById('login-err').style.display = 'block';
+    return;
+  }
+  // derive display name from email (or fallback)
+  let name = 'Karin Karlsson';
+  const local = em.split('@')[0];
+  if (local) {
+    const parts = local.split('.');
+    if (parts.length >= 2) {
+      name = parts.map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    } else {
+      name = local.charAt(0).toUpperCase() + local.slice(1);
+    }
+  }
+  const initials = name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('header-user').textContent = name;
+  document.getElementById('header-avatar').textContent = initials;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  renderDashChart();
+  renderUtfall();
+}
+function doLogout() {
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-email').value = '';
+  document.getElementById('login-pw').value = '';
+  document.getElementById('login-err').style.display = 'none';
+}
+document.getElementById('login-pw').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+// ── NAV ────────────────────────────────────────
+function showPage(id, navId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#sidebar nav ul li').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.getElementById(navId).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// ── TABS ───────────────────────────────────────
+function switchTab(btn, tabId) {
+  const nav = btn.closest('.tab-nav');
+  nav.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const page = btn.closest('.page') || document;
+  page.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  const t = document.getElementById(tabId);
+  if (t) t.classList.add('active');
+}
+
+// ── MODALS ─────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+});
+
+// ── DASHBOARD CHART ────────────────────────────
+function renderDashChart() {
+  const data = [
+    {l:'Grundskola', b:82.4, u:81.7},
+    {l:'Förskola',   b:41.2, u:40.9},
+    {l:'LSS',        b:38.6, u:40.6},
+    {l:'Hemtjänst',  b:29.3, u:30.1},
+    {l:'IFO',        b:22.1, u:21.9},
+    {l:'K&F',        b:14.8, u:14.6},
+  ];
+  buildBarChart('dash-chart', data, 130);
+}
+
+function buildBarChart(id, data, h) {
+  const wrap = document.getElementById(id);
+  if (!wrap) return;
+  const maxV = Math.max(...data.flatMap(d=>[d.b,d.u]));
+  wrap.innerHTML = '';
+  data.forEach(d => {
+    const bh = Math.round((d.b/maxV)*h);
+    const uh = Math.round((d.u/maxV)*h);
+    const over = d.u > d.b;
+    const g = document.createElement('div');
+    g.className = 'bar-group';
+    g.innerHTML = `
+      <div class="bars">
+        <div class="bar bar-b" style="height:${bh}px" title="Budget: ${d.b} Mkr"></div>
+        <div class="bar bar-u${over?' over':''}" style="height:${uh}px" title="Utfall: ${d.u} Mkr"></div>
+      </div>
+      <div class="bar-label">${d.l}</div>`;
+    wrap.appendChild(g);
+  });
+}
+
+// ── UTFALL DATA ────────────────────────────────
+const UTFALL_DATA = {
+  // verksamhet → period range → typ → rows
+  // rows: {konto, namn, verk, budgetPerMon, utfallPerMon, prognos}
+  rows: [
+    // Grundskola
+    {konto:'7010', namn:'Löner lärare',      verk:'grundskola', typ:'kostnad', bpm:[ 0,7383,7383,7383,7383,7383,7383,7383,7383,7383,7383,7383,7383], upm:[ 0,7500,7550,7480,7570,7620,7600,7590,7580,7560,7540,7530,7520], prog:90800},
+    {konto:'7020', namn:'Löner specialped.', verk:'grundskola', typ:'kostnad', bpm:[ 0,1550,1550,1550,1550,1550,1550,1550,1550,1550,1550,1550,1550], upm:[ 0,1600,1590,1580,1620,1610,1600,1590,1580,1570,1560,1555,1550], prog:19100},
+    {konto:'4110', namn:'Pedagogiskt mat.',  verk:'grundskola', typ:'kostnad', bpm:[ 0, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900], upm:[ 0, 880, 870, 890, 910, 920, 910, 900, 890, 880, 870, 860, 850], prog:10760},
+    {konto:'3110', namn:'Statsbidrag',       verk:'grundskola', typ:'intakt',  bpm:[ 0,3500,3500,3500,3500,3500,3500,3500,3500,3500,3500,3500,3500], upm:[ 0,3540,3530,3510,3550,3560,3550,3540,3530,3520,3510,3505,3500], prog:42300},
+
+    // Förskola
+    {konto:'7030', namn:'Löner förskollär.', verk:'forskola',   typ:'kostnad', bpm:[ 0,4120,4120,4120,4120,4120,4120,4120,4120,4120,4120,4120,4120], upm:[ 0,4100,4110,4130,4140,4150,4140,4130,4120,4110,4100,4090,4080], prog:49600},
+    {konto:'3120', namn:'Maxtaxa',           verk:'forskola',   typ:'intakt',  bpm:[ 0,1033,1033,1033,1033,1033,1033,1033,1033,1033,1033,1033,1033], upm:[ 0,1040,1035,1030,1045,1050,1045,1040,1035,1030,1025,1020,1015], prog:12440},
+
+    // LSS
+    {konto:'7110', namn:'Löner LSS-pers.',   verk:'lss',        typ:'kostnad', bpm:[ 0,5200,5200,5200,5200,5200,5200,5200,5200,5200,5200,5200,5200], upm:[ 0,5380,5420,5390,5400,5450,5440,5430,5420,5410,5400,5390,5380], prog:65400},
+    {konto:'7120', namn:'Inhyrd LSS-pers.',  verk:'lss',        typ:'kostnad', bpm:[ 0, 643, 643, 643, 643, 643, 643, 643, 643, 643, 643, 643, 643], upm:[ 0, 720, 740, 710, 730, 750, 740, 730, 720, 710, 700, 690, 680], prog: 8720},
+    {konto:'6910', namn:'Städtjänster',      verk:'lss',        typ:'kostnad', bpm:[ 0, 220, 220, 220, 220, 220, 220, 220, 220, 220, 220, 220, 220], upm:[ 0, 230, 235, 228, 232, 238, 235, 232, 228, 225, 222, 220, 218], prog: 2680},
+    {konto:'3310', namn:'Bidrag LSS',        verk:'lss',        typ:'intakt',  bpm:[ 0,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200], upm:[ 0,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200], prog:14400},
+
+    // Hemtjänst
+    {konto:'7210', namn:'Löner hemtjänst',   verk:'hemtjanst',  typ:'kostnad', bpm:[ 0,3160,3160,3160,3160,3160,3160,3160,3160,3160,3160,3160,3160], upm:[ 0,3200,3220,3180,3210,3230,3220,3210,3200,3190,3180,3170,3160], prog:38400},
+    {konto:'5610', namn:'Fordonskostnader',  verk:'hemtjanst',  typ:'kostnad', bpm:[ 0, 488, 488, 488, 488, 488, 488, 488, 488, 488, 488, 488, 488], upm:[ 0, 500, 510, 495, 508, 515, 510, 505, 500, 495, 490, 485, 480], prog: 5950},
+
+    // IFO
+    {konto:'4210', namn:'Ekonomiskt bistånd',verk:'ifo',        typ:'kostnad', bpm:[ 0,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140,1140], upm:[ 0,1120,1130,1125,1135,1140,1138,1136,1134,1132,1130,1128,1126], prog:13640},
+    {konto:'4810', namn:'Familjehemspl.',    verk:'ifo',        typ:'kostnad', bpm:[ 0, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560], upm:[ 0, 550, 555, 552, 558, 562, 560, 558, 556, 554, 552, 550, 548], prog: 6700},
+    {konto:'7300', namn:'Löner handläggare', verk:'ifo',        typ:'kostnad', bpm:[ 0, 540, 540, 540, 540, 540, 540, 540, 540, 540, 540, 540, 540], upm:[ 0, 535, 538, 536, 540, 542, 540, 539, 538, 537, 536, 535, 534], prog: 6470},
+
+    // Gemensamt
+    {konto:'5010', namn:'Hyra lokaler',      verk:'alla',       typ:'kostnad', bpm:[ 0,2850,2850,2850,2850,2850,2850,2850,2850,2850,2850,2850,2850], upm:[ 0,2848,2852,2848,2850,2852,2850,2849,2848,2848,2847,2847,2846], prog:34190},
+    {konto:'6210', namn:'IT-licenser',       verk:'alla',       typ:'kostnad', bpm:[ 0,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200,1200], upm:[ 0,1210,1215,1208,1212,1218,1215,1212,1210,1208,1206,1204,1202], prog:14560},
+    {konto:'3130', namn:'Kommunalskattebidr',verk:'alla',       typ:'intakt',  bpm:[ 0,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333],upm:[ 0,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333,10333],prog:124000},
+  ]
+};
+
+const MONTHS = ['','Jan','Feb','Mar','Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec'];
+const QUARTER_MAP = {1:[1,2,3],2:[4,5,6],3:[7,8,9],4:[10,11,12]};
+
+function fmt(n) {
+  if(n===0||n===undefined) return '—';
+  const abs = Math.abs(Math.round(n));
+  const s = abs.toString().replace(/\B(?=(\d{3})+(?!\d))/g,' ');
+  return (n<0?'−':'')+s;
+}
+
+function renderUtfall() {
+  const verk = document.getElementById('uf-verk').value;
+  const vy   = document.getElementById('uf-vy').value;
+  const from = parseInt(document.getElementById('uf-from').value);
+  const to   = parseInt(document.getElementById('uf-to').value);
+  const typ  = document.getElementById('uf-typ').value;
+
+  const toReal = Math.max(from, to);
+  const fromReal = Math.min(from, to);
+
+  // chip label
+  const verkLabel = document.getElementById('uf-verk').selectedOptions[0].text;
+  const typLabel  = document.getElementById('uf-typ').selectedOptions[0].text;
+  const periodLabel = fromReal===toReal ? MONTHS[fromReal] : MONTHS[fromReal]+'–'+MONTHS[toReal];
+  document.getElementById('uf-chip').textContent = periodLabel+' · '+verkLabel+' · '+typLabel;
+  document.getElementById('uf-chart-title').textContent = 'Budget vs Utfall – '+verkLabel+' · '+periodLabel+' 2026';
+  document.getElementById('uf-table-title').textContent = 'Detaljrapport – '+verkLabel+' · '+periodLabel+' 2026';
+
+  // filter rows
+  let rows = UTFALL_DATA.rows.filter(r => {
+    const verkOk = verk==='alla' || r.verk===verk || r.verk==='alla';
+    const typOk  = typ==='resultat' || r.typ===typ;
+    return verkOk && typOk;
+  });
+
+  // sum over period
+  function sumPeriod(arr, f, t) {
+    let s=0; for(let i=f;i<=t;i++) s+=(arr[i]||0); return s;
+  }
+
+  // build KPIs
+  let totBudget=0, totUtfall=0, totPrognos=0;
+  rows.forEach(r => {
+    totBudget  += sumPeriod(r.bpm, fromReal, toReal);
+    totUtfall  += sumPeriod(r.upm, fromReal, toReal);
+    totPrognos += r.prog;
+  });
+  const avvik = totUtfall - totBudget;
+  const avvPct = totBudget ? (avvik/totBudget*100) : 0;
+  const isKostnad = typ==='kostnad';
+  // for cost: over budget = negative = bad; for income: under = bad
+  const kpiClass = Math.abs(avvPct)<1 ? 'status-ok' : (isKostnad ? (avvik>0?'status-err':'status-ok') : (avvik<0?'status-err':'status-ok'));
+
+  document.getElementById('uf-kpi-row').innerHTML = `
+    <div class="kpi-card accent">
+      <div class="kpi-label">Budget ${periodLabel}</div>
+      <div class="kpi-value">${fmt(totBudget)} tkr</div>
+      <div class="kpi-sub">${rows.length} rader · ${verkLabel}</div>
+    </div>
+    <div class="kpi-card ${kpiClass}">
+      <div class="kpi-label">Utfall ${periodLabel}</div>
+      <div class="kpi-value">${fmt(totUtfall)} tkr</div>
+      <div class="kpi-sub">vs budget ${fmt(totBudget)} tkr</div>
+      <div class="kpi-delta ${avvik>0&&isKostnad?'neg':avvik<0&&!isKostnad?'neg':'pos'}">${avvik>=0?'▲ +':'▼ '}${fmt(avvik)} tkr (${avvPct>=0?'+':''}${avvPct.toFixed(1)} %)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Helårsprognos</div>
+      <div class="kpi-value">${fmt(totPrognos)} tkr</div>
+      <div class="kpi-sub">Baserat på trend</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Avvikelse %</div>
+      <div class="kpi-value">${avvPct>=0?'+':''}${avvPct.toFixed(1)} %</div>
+      <div class="kpi-sub">${Math.abs(avvPct)<2?'Inom tolerans':'Kräver uppföljning'}</div>
+    </div>
+  `;
+
+  // detail table
+  const tbody = document.getElementById('uf-tbody');
+  const tfoot = document.getElementById('uf-tfoot');
+  tbody.innerHTML = '';
+  let sumB=0, sumU=0, sumP=0;
+  rows.forEach(r => {
+    const b = sumPeriod(r.bpm, fromReal, toReal);
+    const u = sumPeriod(r.upm, fromReal, toReal);
+    const av = u - b;
+    const avp = b ? (av/b*100) : 0;
+    const bad = isKostnad ? av>0 : av<0;
+    const good = isKostnad ? av<0 : av>0;
+    sumB+=b; sumU+=u; sumP+=r.prog;
+    // mini sparkline
+    let spark = '<div class="spark">';
+    const maxSp = Math.max(...r.upm.slice(fromReal,toReal+1));
+    for(let i=fromReal;i<=toReal;i++){
+      const ht = maxSp ? Math.round((r.upm[i]/maxSp)*24) : 4;
+      spark += `<div class="spark-bar" style="height:${ht}px"></div>`;
+    }
+    spark += '</div>';
+    const avColor = bad?'color:var(--red)':good?'color:#3a7a50':'color:#555';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.konto}</td>
+      <td>${r.namn}</td>
+      <td style="color:var(--orange-med)">${r.verk==='alla'?'Gemensamt':document.getElementById('uf-verk').selectedOptions[0].text==='Alla verksamheter'?r.verk:document.getElementById('uf-verk').selectedOptions[0].text}</td>
+      <td class="num">${fmt(b)}</td>
+      <td class="num">${fmt(u)}</td>
+      <td class="num" style="${avColor}">${av>=0?'+':''}${fmt(av)}</td>
+      <td class="num" style="${avColor}">${avp>=0?'+':''}${avp.toFixed(1)} %</td>
+      <td class="num">${fmt(r.prog)}</td>
+      <td>${spark}</td>`;
+    tbody.appendChild(tr);
+  });
+  const totAv = sumU-sumB;
+  const totAvP = sumB?(totAv/sumB*100):0;
+  const totBad = isKostnad?totAv>0:totAv<0;
+  tfoot.innerHTML = `<tr class="row-total">
+    <td colspan="3"><strong>TOTALT</strong></td>
+    <td class="num"><strong>${fmt(sumB)}</strong></td>
+    <td class="num"><strong>${fmt(sumU)}</strong></td>
+    <td class="num" style="${totBad?'color:var(--red)':'color:#3a7a50'}"><strong>${totAv>=0?'+':''}${fmt(totAv)}</strong></td>
+    <td class="num" style="${totBad?'color:var(--red)':'color:#3a7a50'}"><strong>${totAvP>=0?'+':''}${totAvP.toFixed(1)} %</strong></td>
+    <td class="num"><strong>${fmt(sumP)}</strong></td>
+    <td></td>
+  </tr>`;
+
+  // period table
+  const ptbody = document.getElementById('uf-period-tbody');
+  ptbody.innerHTML = '';
+  let accB=0, accU=0;
+  const periods = vy==='kvartal'
+    ? [[1,3,'Q1'],[4,6,'Q2'],[7,9,'Q3'],[10,12,'Q4']].filter(([f])=>f<=toReal&&(f+2)>=fromReal)
+    : Array.from({length:toReal-fromReal+1},(_,i)=>[fromReal+i,fromReal+i,MONTHS[fromReal+i]]);
+
+  periods.forEach(([pf,pt,pl]) => {
+    const b = rows.reduce((s,r)=>s+sumPeriod(r.bpm,pf,pt),0);
+    const u = rows.reduce((s,r)=>s+sumPeriod(r.upm,pf,pt),0);
+    accB+=b; accU+=u;
+    const av=u-b;
+    const bad = isKostnad?av>0:av<0;
+    const avColor = Math.abs(av)<200?'color:#555':bad?'color:var(--red)':'color:#3a7a50';
+    const badge = Math.abs(av)<200?'badge-grey':bad?'badge-err':'badge-ok';
+    const badgeT = Math.abs(av)<200?'Inom plan':bad?'Överskridande':'Under budget';
+    ptbody.innerHTML += `<tr>
+      <td><strong>${pl} 2026</strong></td>
+      <td class="num">${fmt(b)}</td>
+      <td class="num">${fmt(u)}</td>
+      <td class="num" style="${avColor}">${av>=0?'+':''}${fmt(av)}</td>
+      <td class="num">${fmt(accB)}</td>
+      <td class="num">${fmt(accU)}</td>
+      <td><span class="badge ${badge}">${badgeT}</span></td>
+    </tr>`;
+  });
+
+  // chart
+  const chartData = periods.map(([pf,pt,pl]) => ({
+    l: pl,
+    b: rows.reduce((s,r)=>s+sumPeriod(r.bpm,pf,pt),0)/1000,
+    u: rows.reduce((s,r)=>s+sumPeriod(r.upm,pf,pt),0)/1000,
+  }));
+  buildBarChart('uf-chart', chartData, 150);
+}
+
+// ── BUDGET FILTER ─────────────────────────────
+function filterBudget() {
+  const v = document.getElementById('bud-filter').value;
+  document.querySelectorAll('#bud-tbody tr').forEach(tr => {
+    tr.style.display = (v==='all'||tr.dataset.verk===v) ? '' : 'none';
+  });
+}
+
+// ── VERIFIKATION FILTER ───────────────────────
+function filterVer() {
+  const s = (document.getElementById('ver-search').value||'').toLowerCase();
+  const k = document.getElementById('ver-konto').value;
+  let n=0;
+  document.querySelectorAll('#ver-tbody tr').forEach(tr => {
+    const txt = (tr.dataset.search||tr.innerText).toLowerCase();
+    const kontoCell = tr.cells[2]?.textContent.trim();
+    const matchS = !s||txt.includes(s);
+    const matchK = !k||kontoCell===k;
+    const show = matchS&&matchK;
+    tr.style.display = show?'':'none';
+    if(show) n++;
+  });
+  document.getElementById('ver-count').textContent = n;
+}
+
+// ── TABLE SORT ────────────────────────────────
+document.querySelectorAll('.data-table thead th').forEach(th => {
+  th.addEventListener('click', function() {
+    const table = this.closest('table');
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    const idx = Array.from(this.parentNode.children).indexOf(this);
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    const asc = this.dataset.asc !== 'true';
+    this.dataset.asc = asc;
+    rows.sort((a,b) => {
+      const av = a.cells[idx]?.textContent.trim()||'';
+      const bv = b.cells[idx]?.textContent.trim()||'';
+      const an = parseFloat(av.replace(/[^\d\-\.]/g,''));
+      const bn = parseFloat(bv.replace(/[^\d\-\.]/g,''));
+      if(!isNaN(an)&&!isNaN(bn)) return asc?an-bn:bn-an;
+      return asc?av.localeCompare(bv,'sv'):bv.localeCompare(av,'sv');
+    });
+    rows.forEach(r=>tbody.appendChild(r));
+  });
+});
+</script>
+</body>
+</html>
